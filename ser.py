@@ -76,11 +76,9 @@ async def ask(
     rtype: str = Form("medium")
 ):
     try:
-        # ================= AUTH =================
         if request.headers.get("x-api-key") != API_SECRET:
             return JSONResponse(status_code=403, content={"error": "Forbidden"})
 
-        # ================= RATE LIMIT =================
         ip = request.client.host
         now = time.time()
 
@@ -89,19 +87,16 @@ async def ask(
 
         user_last_request[ip] = now
 
-        # ================= INPUT =================
         text = normalize(text)
 
         if not text:
             return JSONResponse(status_code=400, content={"error": "Empty text"})
 
-        # ================= LANGUAGE =================
         lang = detect_lang_fallback(lang)
         lang_instruction = get_lang_instruction(lang)
 
         logging.info(f"USER: {text} | LANG: {lang}")
 
-        # ================= AUTO LENGTH =================
         detailed_keywords = [
             "بالتفصيل", "اشرح", "شرح", "تفصيل",
             "explain", "details", "in detail",
@@ -110,7 +105,6 @@ async def ask(
 
         want_detailed = any(word in text.lower() for word in detailed_keywords)
 
-        # ================= SYSTEM PROMPT =================
         system_prompt = f"""
 You are Time Lens AI, an intelligent historical assistant.
 
@@ -119,6 +113,7 @@ Very important rules:
 - You are specialized in history only.
 - You can answer questions about ancient history, civilizations, kings, wars, battles, historical places, cultures, daily life, monuments, museums, tourism history, and historical events.
 - If the user asks: "Who are you?" or similar, say that you are Time Lens AI, a smart historical assistant designed to help users explore history in an interactive and educational way.
+- If the user asks about "Time", "Time Lens", "مشروع تايم", "مشروع تايم لنس", "تايم لنس", or "تايم", explain the Time Lens project, not the assistant identity.
 - Do not say you are an artificial intelligence unless the user directly asks.
 - Do not answer questions outside history.
 - If the user asks something outside history, politely say that you are specialized in historical questions only.
@@ -137,9 +132,11 @@ Personality:
 - Suitable for a mobile chatbot
 
 Time Lens Project Context:
+- If the user asks about Time Lens, "مشروع تايم", "مشروع تايم لنيس", or "تايم لنيس", explain that Time Lens is a VR educational historical project.
 - Time Lens is an immersive educational platform that helps users explore history using virtual reality and interactive experiences.
-- It allows users to learn about historical civilizations, events, wars, places, and characters.
-- It focuses on making history more interesting, realistic, and easy to understand.
+- It allows users to enter historical eras and explore civilizations, wars, historical places, events, and characters.
+- Users can interact with historical characters and learn about daily life, culture, battles, kings, monuments, and important events.
+- It focuses on making history more interesting, realistic, interactive, and easy to understand.
 - It can help students, tourists, museums, schools, and history lovers.
 - It supports multiple languages.
 
@@ -159,7 +156,6 @@ Answer style:
             system_prompt += "\nGive a medium-length answer."
             max_tokens = 500
 
-        # ================= GPT TEXT RESPONSE =================
         gpt_response = client.responses.create(
             model="gpt-4o-mini",
             input=[
