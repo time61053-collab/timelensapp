@@ -88,7 +88,7 @@ async def ask(
         want_detailed = any(word in text.lower() for word in detailed_keywords)
 
         system_prompt = """
-You are Tut, an intelligent historical assistant.
+You are Thoth, an intelligent historical assistant.
 
 Very important rules:
 - Detect the language of the user's question automatically.
